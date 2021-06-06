@@ -1,5 +1,7 @@
 import aiohttp
+
 from aiohttp import web
+
 
 from utils import translate
 
@@ -51,3 +53,4 @@ async def index(request):
             response['response']['text'] = 'Переформулируйте запрос'
 
     return web.json_response(data=response)
+
