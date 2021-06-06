@@ -1,0 +1,50 @@
+@startuml
+skinparam sequenceArrowThickness 4
+skinparam roundcorner 20
+autonumber
+
+user -> device: speak question
+device -> Я.Диалоги: send audio
+Я.Диалоги -> Я.Диалоги: ASR
+Я.Диалоги -> speech_service: POST request to webhook
+speech_service -> speech_service: parse request
+speech_service -> y_translate: ru - en
+alt success translate
+    y_translate --> speech_service: return translated text
+else api error
+    speech_service --> Я.Диалоги
+'    Я.Диалоги -> Я.Диалоги: TTS
+'    Я.Диалоги --> device: return audio
+'    device --> user: warning notify
+end
+speech_service -> speech_service: prepare request to async_api
+speech_service -> async_api
+async_api -> elastic
+elastic --> async_api
+
+alt success response
+    async_api --> speech_service
+else api error
+    speech_service --> Я.Диалоги
+end
+speech_service -> speech_service: parse response
+
+alt if not empty response
+    speech_service -> y_translate: en - ru
+else empty response
+    speech_service -> speech_service: prepare response
+    speech_service --> Я.Диалоги
+end
+
+alt success translate
+    y_translate --> speech_service: return translated text
+else api error
+    speech_service --> Я.Диалоги
+end
+speech_service -> speech_service: prepare response
+speech_service --> Я.Диалоги
+Я.Диалоги -> Я.Диалоги: TTS
+Я.Диалоги --> device: return audio
+device --> user: speak answer
+
+@enduml

@@ -1,0 +1,14 @@
+version: '3.7'
+
+
+services:
+  speech_api:
+    container_name: speech_api
+    build: .
+    restart: always
+    networks:
+      - async_api_default
+
+networks:
+  async_api_default:
+    external: true
