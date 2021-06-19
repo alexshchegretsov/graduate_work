@@ -7,8 +7,6 @@ services:
     depends_on:
       - elasticsearch
       - redis
-    ports:
-      - 8000:8000
     restart: always
 
   elasticsearch:
@@ -22,11 +20,11 @@ services:
       - 9200
     restart: always
 
-#  es_initializer:
-#    container_name: es_initializer
-#    build: ./conf/elastic
-#    depends_on:
-#      - elasticsearch
+  es_initializer:
+    container_name: es_initializer
+    build: ./conf/elastic
+    depends_on:
+      - elasticsearch
 
   redis:
     image: redis:latest
@@ -37,13 +35,13 @@ services:
       - elasticsearch
     restart: always
 
-#  etl:
-#    build: ./etl
-#    container_name: etl
-#    restart: always
-#    depends_on:
-#      - es_initializer
-#      - postgres
+  etl:
+    build: ./etl
+    container_name: etl
+    restart: always
+    depends_on:
+      - es_initializer
+      - postgres
 
   postgres:
     build: ./conf/postgres
@@ -55,19 +53,17 @@ services:
     expose:
       - 5432
 
-#  nginx:
-#    image: nginx:latest
-#    container_name: nginx_server
-#    ports:
-#      - 80:80    # use free port
-#      - 443:443
-#    depends_on:
-#      - fast_api
-#    volumes:
-#      - ./conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-##      - ./conf/nginx/fast_api/fast_api.conf:/etc/nginx/conf.d/fast_api.conf:ro
-#      - ./conf/nginx/app.conf:/etc/nginx/conf.d/app.conf:ro
-#    restart: always
+  nginx:
+    image: nginx:latest
+    container_name: nginx_server
+    ports:
+      - 80:80    # use free port
+    depends_on:
+      - fast_api
+    volumes:
+      - ./conf/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./conf/nginx/fast_api/fast_api.conf:/etc/nginx/conf.d/fast_api.conf:ro
+    restart: always
 
 volumes:
   elasticsearch_data:

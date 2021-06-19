@@ -1,9 +1,10 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, status, Security
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status, Security, Body
 
 from api.utils import has_access_to_questionable_content, verify_jwt_scopes
 from api.v1.api_models.film import FilmDetail, FilmShort
+from aiohttp.web import HTTPError, HTTPClientError
 
 from core.caching import cache
 from core.config import DEFAULT_PAGE, MAX_PER_PAGE, PER_PAGE, ELASTIC_MAX_RESULT_WINDOW, QUESTIONABLE_GENRE
@@ -50,7 +51,7 @@ async def film_sorted(
     response_description='Name and rating of a premium movies',
 )
 @cache(prefix='sorted_premium_films')
-async def film_sorted(
+async def film_sorted_premium(
         sort: str = Query(..., regex=r'^(\w|-)\w+', min_length=1, max_length=20),
         page: int = Query(DEFAULT_PAGE, gt=0, le=ELASTIC_MAX_RESULT_WINDOW),
         page_size: int = Query(PER_PAGE, gt=0, le=MAX_PER_PAGE),
@@ -115,6 +116,36 @@ async def film_details(
 
     if not has_access and QUESTIONABLE_GENRE in film.genres:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='film not found')
+
+    if not film:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='film not found')
+
+    return FilmDetail(
+        uuid=film.uuid,
+        title=film.title,
+        imdb_rating=film.imdb_rating,
+        description=film.description,
+        genres=film.genres,
+        actors=film.actors,
+        writers=film.writers,
+        directors=film.directors,
+    )
+
+
+@film_router.get(
+    '/title/',
+    response_model=FilmDetail,
+    description='Full info about a movie matched by title',
+    response_description=(
+        'Title, description, rating, genre and people that participated in a movie'
+    ),
+)
+@cache(prefix='title_search')
+async def film_search_by_title(
+        query: str = Query(..., title='The movie title to get', min_length=1, max_length=255),
+        film_service: FilmService = Depends(get_film_service)
+) -> FilmDetail:
+    film = await film_service.get_search_title(title=query)
 
     if not film:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='film not found')

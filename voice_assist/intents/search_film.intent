@@ -1,0 +1,18 @@
+slots:
+    movie_name:
+        source: $MovieName
+
+root:
+    $Action $MovieType $MovieName
+$MovieType:
+    %lemma
+    фильм
+    ролик
+    сериал
+    видео
+$MovieName:
+    .+
+$Action:
+    %lemma
+    найди
+    поищи

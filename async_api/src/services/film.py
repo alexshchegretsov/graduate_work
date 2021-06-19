@@ -90,26 +90,44 @@ class FilmService(BaseService):
             self,
             query: str,
             page: int,
-            page_size: int
+            page_size: int,
     ) -> Optional[List[Film]]:
+
+        q = {
+            'multi_match': {
+                'query': query,
+                'fuzziness': 'auto',
+                'fields': [
+                    'title^5',
+                    'description^4'
+                    ],
+                }
+            }
 
         body = {
             'size': page_size,
             'from': (page - 1) * page_size,
+            'query': q
+        }
+        doc = await self.elastic.search(index=self.index, body=body)
+        return [self.model(**hit['_source']) for hit in doc['hits']['hits']]
+
+    async def get_search_title(self, title):
+        res = None
+        body = {
             'query': {
-                'multi_match': {
-                    'query': query,
-                    'fuzziness': 'auto',
-                    'fields': [
-                        'title^5',
-                        'description^4'
-                    ],
+                'match': {
+                    'title': {
+                        'query': title
+                    }
                 }
             }
         }
-
         doc = await self.elastic.search(index=self.index, body=body)
-        return [self.model(**hit['_source']) for hit in doc['hits']['hits']]
+        if doc['hits']['total']['value']:
+            res = self.model(**doc['hits']['hits'][0]['_source'])
+
+        return res
 
 
 @lru_cache()

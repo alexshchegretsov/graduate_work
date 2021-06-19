@@ -1,0 +1,19 @@
+@startuml
+agent user
+component device
+component cloud_function_component
+component async_api_component
+database elastic
+
+
+user <--> device
+device <--> Я.Диалоги: ASR/TTS
+Я.Диалоги <--> cloud_function_api
+cloud_function_api -- cloud_function_component
+
+cloud_function_component <-> y_translate: [ru-en, en-ru] translate human names, movie names
+cloud_function_component <--> async_api
+async_api -- async_api_component
+async_api_component <--> elastic
+@enduml
+
