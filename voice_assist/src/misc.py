@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional
+import logging
+from typing import Dict, List, Optional, Callable
 
 from pydantic import BaseModel
 
@@ -15,11 +16,25 @@ class Request:
 
     @property
     def intents(self):
-        return self.request_body.get('request', {}).get('nlu', {}).get('intents', {})
+        _intents = {}
+        try:
+            _intents = self.request_body['request']['nlu']['intents']
+        except KeyError as ex:
+            logging.exception(ex)
+        return _intents
 
     @property
     def state(self):
-        return self.request_body.get('state', {}).get(STATE_REQUEST_KEY, {})
+        _state = {}
+        try:
+            _state = self.request_body['state'][STATE_REQUEST_KEY]
+        except KeyError as ex:
+            logging.exception(ex)
+        return _state
+
+    @property
+    def is_session_new(self):
+        return self.request_body['session']['new']
 
 
 class FilmPerson(BaseModel):
@@ -70,26 +85,11 @@ class Film(BaseModel):
         return [self.title, str(self.imdb_rating), self.description, genres, actors, writers, directors]
 
 
-class Scene:
-    WELCOME = 'welcome'
-    FILM = 'film'
 
-    __slots__ = []
-
-
-class GlobalIntents:
+class Intents:
     WHAT_CAN_YOU_DO = 'what_can_you_do'
     HELP = 'YANDEX.HELP'
     SEARCH_FILM = 'search_film'
-
-    __slots__ = []
-
-
-class WelcomeSceneIntents(GlobalIntents):
-    pass
-
-
-class FilmSceneIntents(GlobalIntents):
     GET_DESCRIPTION = 'get_description'
 
     __slots__ = []
@@ -117,3 +117,13 @@ class Message:
     ON_SUCCESS_MESSAGE_TEMPLATE = 'Найден фильм - {}'
 
     __slots__ = []
+
+
+class Command:
+    def __init__(self, phrase: str, func: Callable):
+        self.phrase = phrase
+        self.func = func
+
+    async def __call__(self, *args, **kwargs):
+        return await self.func(*args, **kwargs)
+

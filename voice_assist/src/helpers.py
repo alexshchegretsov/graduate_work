@@ -35,16 +35,19 @@ async def get_film_data(film_title: str) -> Dict:
             return await resp.json()
 
 
-def make_response(text: str, tts=None, state=None) -> Dict:
-    resp = {
-            'text': text,
-            'tts': tts if tts is not None else text
-        }
+def make_response(text, tts=None, state=None, scene_id=None):
+    response = {
+        'text': text,
+        'tts': tts if tts is not None else text,
+    }
 
-    hook_resp = {
-        'response': resp,
+    webhook_response = {
+        'response': response,
         'version': '1.0',
+        STATE_RESPONSE_KEY: {
+            'scene': scene_id,
+        },
     }
     if state is not None:
-        hook_resp[STATE_RESPONSE_KEY] = state
-    return hook_resp
+        webhook_response[STATE_RESPONSE_KEY].update(state)
+    return webhook_response
