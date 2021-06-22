@@ -17,6 +17,7 @@ class Scene:
     def id(cls):
         return cls.__name__
 
+    @error_handler
     async def reply(self, request: Request):
         for command in self.commands:
             if command.phrase in request.intents:
@@ -70,7 +71,6 @@ class WelcomeScene(Scene):
             Command(phrase=Intents.SEARCH_FILM, func=self.on_search)
         ]
 
-    @error_handler
     async def on_search(self, request: Request):
         new_scene_id = FilmScene.id()
         return await self._on_search(request, new_scene_id)
@@ -98,7 +98,6 @@ class FilmScene(Scene):
             Command(phrase=Intents.GET_DESCRIPTION, func=self.get_description)
         ]
 
-    @error_handler
     async def on_search(self, request: Request):
         new_scene_id = self.id()
         return await self._on_search(request, new_scene_id)
@@ -106,7 +105,6 @@ class FilmScene(Scene):
     def on_help(self, request: Request):
         return self.make_response(text=Message.ON_FILM_HELP_MESSAGE, state=request.state)
 
-    @error_handler
     async def get_description(self, request: Request):
         film = Film.parse_obj(request.state['data'])
         text = Message.FIELD_INFO_IS_NOT_EXISTS_MESSAGE if not film.description else film.translated.description
